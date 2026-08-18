@@ -4,13 +4,13 @@ Date: 2026-08-18
 
 ## One-line state
 
-> **The repo has moved from “two neural coupling geometries” to a narrower resource question. Gate 1 showed that a slow metric state can carry useful history when task structure aligns with physical geometry. Gate 1b then showed that a learned rank-8 addressed transition solves the same task perfectly in both aligned and scrambled worlds. Metric coupling therefore has no unique capability receipt here; the remaining question is what each system pays to install and maintain its useful neighborhood.**
+> **The repo has moved from “two neural coupling geometries” to a resource question about how one physical cell participates in several coupling channels at once. Gate 1 showed a metric slow-state inductive bias; Gate 1b killed any unique-capability claim with a learned addressed transition. The newest correction is that a biological neuron should not have one abstract scalar output: its distributed membrane simultaneously changes private intracellular state and writes transmembrane-current consequences into extracellular space, while spikes/transmitters and slow chemical/ionic variables form additional channels with different address vocabularies.**
 
 This is a synthetic computational instrument, not a tissue model.
 
 ## Physics guardrail
 
-Keep two extracellular variables distinct.
+Keep extracellular electric and slow chemical/ionic variables distinct.
 
 Quasi-static electric potential:
 
@@ -20,6 +20,10 @@ phi(t) = G q(t)
 
 No autonomous temporal memory in this approximation. The closed neuron-field loop can still have dynamics.
 
+But `q` should eventually mean **distributed transmembrane current**, not merely `E f(v)` emitted after a point-neuron activation.
+
+At a synapse, transmitter opens receptor conductances; the resulting transmembrane currents contribute to extracellular potential while also altering the receiving neuron's intracellular state. Incoming dendritic events therefore already write into extracellular space while they are being integrated.
+
 Separate slow shared state:
 
 ```text
@@ -28,13 +32,15 @@ tau_c dc/dt = D_c Laplacian(c) - clearance(c) + release(activity)
 
 `c` is normalized toy state. Do not call it potassium without physiological calibration.
 
-Each unit can inhabit three non-equivalent neighborhoods:
+Each unit can inhabit at least three non-equivalent neighborhoods:
 
 ```text
 intracellular / dendritic geometry
 synaptic / topological geometry
 extracellular / metric geometry
 ```
+
+and may additionally participate in chemical/neuromodulatory volume transmission whose receptor geometry differs again.
 
 ## Gate 0 — dual route
 
@@ -145,6 +151,79 @@ The live question is now:
 
 That is the bridge back to `SplatNeuron`'s observer-resource ledger.
 
+## Membrane multiplex correction
+
+New file:
+
+```text
+docs/MEMBRANE_MULTIPLEX_PREFLIGHT.md
+```
+
+Do not model a neuron as one scalar output copied into several media.
+
+The membrane is a distributed boundary with simultaneous consequences:
+
+```text
+intracellular consequence
+    local voltage / compartment state
+
+synaptic consequence
+    addressed transmitter release after suitable axonal events
+
+quasi-static extracellular consequence
+    transmembrane currents contribute immediately to phi
+
+slow chemical / ionic consequence
+    extrasynaptic transmitter, ionic accumulation, buffering, etc.
+```
+
+Important correction:
+
+> **Neurotransmitter release is not how the neuron directly writes the extracellular electric field. Transmembrane currents write the electric field. Neurotransmitters can cause such currents at target membranes and can also participate in distinct chemical volume-transmission channels.**
+
+Likewise, `dendrite = low-pass filter` is too weak. Passive cable properties are low-pass, but active conductances can amplify, compensate, resonate and change filtering.
+
+Use instead:
+
+> **Dendritic morphology plus local membrane state defines a state-dependent spatiotemporal transfer operator.**
+
+A later compartmental model should therefore replace
+
+```text
+q = E f(v)
+```
+
+with something closer to
+
+```text
+q_i(x,t) = transmembrane_current_i(x,t)
+phi = G[q]
+```
+
+and keep chemical/ionic channels separately stateful.
+
+### New resource hypothesis
+
+The possible interesting object is **shared physical implementation of multiple transfer kernels**.
+
+For one source/receiver pair:
+
+```text
+H_syn[j<-i](omega)
+H_eph[j<-i](omega)
+H_chem[j<-i](omega)
+```
+
+are not arbitrary independent matrices in biology. They are jointly constrained by common positions, morphologies, membrane currents, release sites and receptor distributions.
+
+Question:
+
+> **Can one physical geometry implement a useful family of channel-specific transfer functions more cheaply than storing each channel as an unrelated generic operator?**
+
+Mandatory attacker: generic multi-channel system with the same total state/output count, matched temporal spectra where meaningful, explicit connection-description cost, and no shared-geometry constraint.
+
+This is the mathematical object to analyze before inventing another neuron architecture.
+
 ## Grounding / recursive projection
 
 File:
@@ -153,7 +232,7 @@ File:
 docs/GROUNDING_AND_RECURSION.md
 ```
 
-The model-collapse connection is deliberately separate from Gate 1.
+The model-collapse connection is deliberately separate from Gate 1 and from the membrane multiplex result.
 
 Do not say:
 
@@ -189,11 +268,15 @@ Large-`lambda` spatial modes decay faster. The same mechanism that cheaply sprea
 
 Do not spend a gate merely demonstrating that theorem. A worthwhile experiment must make the external-innovation source matter in a nontrivial way.
 
+## Personal neurological observations — scientific caution
+
+Do not use the user's post-surgical jolts as evidence for a specific amygdala route, seizure mechanism, or rewiring mechanism. They are a motivating example of the general systems point that threat/body/sensory channels can converge on shared defensive circuitry, but the personal mechanism is medically unresolved.
+
 ## Next science
 
-Two clean continuations remain, and they should not be mixed prematurely.
+Three continuations are now visible. Do not mix them all into one gate.
 
-### A. Resource frontier — probably first
+### A. Resource frontier — still probably first
 
 Attack Gate 1b's apparent cost:
 
@@ -219,7 +302,19 @@ learning/search cost
 
 Prediction: in the aligned world the metric/interval vocabulary may have a very short description; in the scrambled world the addressed learner should dominate flexibility. If a simple compressed context code beats both, keep that result.
 
-### B. Innovation provenance
+### B. Multiplex transfer mathematics
+
+Analyze the channel family
+
+```text
+H_ji(omega) = {H_syn, H_eph, H_chem}
+```
+
+when the components share latent physical parameters versus when they are stored independently.
+
+The question is description/implementation coupling, not capability.
+
+### C. Innovation provenance
 
 Use known field eigenmodes and compare:
 
@@ -240,17 +335,15 @@ The strong question is not whether `real data` is magic. It is whether informati
 
 Only after point-unit state/coupling/resource questions survive.
 
-Then replace scalar emit/read gains with spatial shapes:
-
-```text
-A_eph[j,i] = R_j G E_i
-```
-
-and ask whether morphology is a short physical implementation of useful receiver-specific transfer kernels relative to generic point machinery.
+Then replace scalar emit/read gains with distributed membrane shapes/current sources and ask whether morphology is a short physical implementation of useful receiver-specific transfer kernels relative to generic point machinery.
 
 ## Oja note
 
 Do **not** pivot this repo into `Oja rule in geometric coordinates` now. Oja/PCA remains a useful historical baseline and possible later local-learning mechanism. The live object here is coupling/state/resource geometry.
+
+## Medical note
+
+Pregabalin is an antiepileptic prescription drug and official EMA information recommends gradual discontinuation rather than abrupt stopping. Any new or changed post-surgical jolt-like episodes after medication changes belong with the treating neurologist rather than being used as mechanistic evidence for this repo.
 
 ## Stop lines
 
@@ -258,11 +351,14 @@ Do **not** pivot this repo into `Oja rule in geometric coordinates` now. Oja/PCA
 - no field memory claim for quasi-static `phi`;
 - no unique metric capability claim after Gate 1b;
 - no potassium claim from normalized `c`;
+- no claim that transmitter itself is the electric field;
+- no claim that all neurons use the same mix of synaptic/electric/volume channels;
+- no claim that dendrites are merely passive low-pass filters;
 - no reward/evolution story before the coupling/resource result earns it;
 - no model-collapse-is-thought claim;
 - no `real = high frequency` claim;
 - no `synthetic = intrinsically inferior` claim;
-- no morphology story until point-unit attackers are settled.
+- no morphology efficiency story until matched generic multi-channel attackers are settled.
 
 ## Branch / PR
 
@@ -275,7 +371,7 @@ agent/shared-milieu-grounding
 Draft PR:
 
 ```text
-#1 Gate 1: shared metric history and grounding hypothesis
+#1 Gate 1: shared metric history, addressed attacker, and grounding hypothesis
 ```
 
-CI packaging discovery was corrected by explicitly excluding `experiments` and `tests` from setuptools package discovery. Treat CI only as mechanical verification, never as scientific evidence.
+CI now passes on Python 3.10 and 3.13 after package-discovery and `python -m pytest` fixes. Treat CI only as mechanical verification, never as scientific evidence.
