@@ -27,9 +27,11 @@ That distinction survives without a Fourier metaphor.
 
 ## What model collapse contributes
 
-Shumailov et al. (Nature 2024, DOI 10.1038/s41586-024-07566-y) show that recursive generative training can progressively lose the tails of the original data distribution and eventually badly distort the learned distribution. Retaining some original data substantially reduces the degradation in their language-model experiment.
+Shumailov et al. (Nature 2024, DOI `10.1038/s41586-024-07566-y`) show that recursive generative training can progressively lose tails of the original data distribution and eventually badly distort the learned distribution. Retaining some original data substantially reduces degradation in their language-model experiment.
 
-Vu, Reeves and Wenger (arXiv:2505.21677v2) study multiple models training on one another's generated outputs. Their result is more nuanced: synthetic interaction can expose one model to concepts absent from its own data, while repeated interaction can also homogenize models on shared tasks.
+Vu, Reeves and Wenger (`arXiv:2505.21677v2`) study multiple models training on one another's generated outputs. Their result is more nuanced: synthetic interaction can expose one model to concepts absent from its own data, while repeated interaction can also homogenize models on shared tasks.
+
+Suresh, Thangaraj and Khandavally (AISTATS 2025) also show that collapse rate is regime-dependent: in simple discrete/Gaussian settings with many samples, forgetting can take many recursive generations. So `model collapse happens instantly` is not a general law.
 
 Therefore the useful lesson is **not**:
 
@@ -85,11 +87,11 @@ Rao and Ballard's 1999 predictive-coding model explicitly uses feedback predicti
 
 The important conceptual point for this repo is that recurrent internal dynamics can transform, denoise, complete and replay existing information, but an internally generated signal is not automatically new evidence about the hidden external cause.
 
-This is compatible with constructive replay. Offline cortical reactivations can predict how future sensory responses drift (Deitch et al., Nature 2024, DOI 10.1038/s41586-023-06810-1). Internal activity can reorganize the model. It simply should not be confused with an independent measurement of the world.
+This is compatible with constructive replay. Nguyen et al. (`Nature 625, 110–118`, DOI `10.1038/s41586-023-06810-1`) found stimulus-specific cortical reactivations after visual experience; the content of those reactivations predicted future changes and increased separation in later sensory responses. Internal activity can reorganize the model. It simply should not be confused with an independent measurement of the world.
 
-Sensory experience also steers representational drift in visual cortex (Bauer et al., Nature Communications 2024, DOI 10.1038/s41467-024-53326-x), while head-direction population activity drifts more in darkness and can be re-anchored by visual landmarks (Chaudhuri et al./related Nature 2023 head-direction population study, DOI represented by article s41586-023-05813-2).
+Sensory experience also steers representational drift in visual cortex (Bauer et al., Nature Communications 2024, DOI `10.1038/s41467-024-53326-x`). In the head-direction system, Ajabi et al. (Nature 2023, DOI `10.1038/s41586-023-05813-2`) found increased drift in darkness and strong recalibration by visual landmarks, with persistent experience-dependent biases.
 
-So the brain analogy is not model-collapse = thought.
+So the brain analogy is not `model collapse = thought`.
 
 A more defensible statement is:
 
@@ -107,7 +109,7 @@ This is an exact property of the toy linear field.
 
 Large-`lambda` spatial modes decay faster. In ordinary language: rapidly varying metric distinctions are smoothed more strongly than broad modes.
 
-That means the user's filtering intuition has a precise version here:
+That means the filtering intuition has a precise version here:
 
 > **The slow shared field is a selective forgetting operator in its own spatial vocabulary.**
 
@@ -116,6 +118,24 @@ Gate 1 showed the beneficial side. The task-relevant context lived in broad, phy
 The opposite task should exist too. If a needed distinction lives in rapidly alternating spatial modes, the same diffusion should destroy it.
 
 Neither outcome is universally good or bad. The field defines a prior over which histories are cheap to retain and share.
+
+## A useful linear-systems form
+
+A large fraction of the connection can be written without biology:
+
+```text
+x_{t+1} = A x_t + B u_t
+```
+
+where `A` is the system's internally recurrent/relaxing operator and `u_t` is incoming innovation.
+
+With `u_t = 0`, modes with gain below one contract. Repeated recursion cannot spontaneously recover a component that has become exactly absent from the state.
+
+With informative `u_t`, those modes can be continually replenished.
+
+This is not itself a discovery; it is classic state-space/control structure. What may be useful is treating observer loss, model-collapse loss, memory-field loss and sensory grounding with the **same accounting question**:
+
+> Which modes/distinctions are internally self-sustaining, which decay, and which require recurrent external innovation?
 
 ## Candidate Gate 2 — innovation versus self-recurrence
 
