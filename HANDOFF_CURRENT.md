@@ -4,283 +4,374 @@ Date: 2026-08-18
 
 ## One-line state
 
-> **Gate 0 has established only the structural existence of two independently manipulable coupling routes in the toy instrument. It has *not* established a special computational advantage for metric/ephaptic coupling. The next live question is whether a slow shared extracellular state buys something that matched private adaptation does not.**
+> **The repo has moved from “two neural coupling geometries” to a resource question about how one physical cell participates in several coupling channels at once. Gate 1 showed a metric slow-state inductive bias; Gate 1b killed any unique-capability claim with a learned addressed transition. The newest correction is that a biological neuron should not have one abstract scalar output: its distributed membrane simultaneously changes private intracellular state and writes transmembrane-current consequences into extracellular space, while spikes/transmitters and slow chemical/ionic variables form additional channels with different address vocabularies.**
 
-## Provenance
+This is a synthetic computational instrument, not a tissue model.
 
-This repo branches conceptually from `anttiluode/SplatNeuron` after its observer-resource work through Gate 13c was merged to `main`.
+## Physics guardrail
 
-`SplatNeuron` started as “splats as neurons” and was repeatedly attacked. What survived there was a conditional observer-description result: when task structure aligns with a compact observation vocabulary, one-time map/configuration bits can reduce required logical measurement width; dense rotation/high task complexity removes that advantage.
+Keep extracellular electric and slow chemical/ionic variables distinct.
 
-Do not move those empirical claims here. This repo asks a different question.
-
-## Physics correction that starts the repo
-
-Treat ordinary low-frequency extracellular electric potential, at first approximation, as quasi-static:
+Quasi-static electric potential:
 
 ```text
 phi(t) = G q(t)
 ```
 
-where `q(t)` is the current-source pattern and `G` is a volume-conductor/geometry operator.
+No autonomous temporal memory in this approximation. The closed neuron-field loop can still have dynamics.
 
-`phi(t)` has no autonomous memory in this approximation.
+But `q` should eventually mean **distributed transmembrane current**, not merely `E f(v)` emitted after a point-neuron activation.
 
-The loop does:
+At a synapse, transmitter opens receptor conductances; the resulting transmembrane currents contribute to extracellular potential while also altering the receiving neuron's intracellular state. Incoming dendritic events therefore already write into extracellular space while they are being integrated.
+
+Separate slow shared state:
 
 ```text
-neural state_t
-   -> source currents q_t
-   -> phi_t = G q_t
-   -> ephaptic perturbation of membranes
-   -> neural state_{t+1}
+tau_c dc/dt = D_c Laplacian(c) - clearance(c) + release(activity)
 ```
 
-A distinct slow extracellular state can live in ionic/homeostatic variables such as extracellular K+, glial buffering, pH and related variables. That state can have real relaxation/diffusion dynamics.
+`c` is normalized toy state. Do not call it potassium without physiological calibration.
 
-Therefore **do not collapse electric potential and ionic milieu into one “field.”**
-
-## The architectural object
-
-Each unit inhabits three different neighborhoods:
+Each unit can inhabit at least three non-equivalent neighborhoods:
 
 ```text
-intracellular geometry
-    where inside this cell did a signal arrive?
-
-synaptic topology
-    who is wired to this cell?
-
-extracellular metric geometry
-    who is physically near/aligned in the shared medium?
+intracellular / dendritic geometry
+synaptic / topological geometry
+extracellular / metric geometry
 ```
 
-Minimal equations:
+and may additionally participate in chemical/neuromodulatory volume transmission whose receptor geometry differs again.
+
+## Gate 0 — dual route
+
+Files:
 
 ```text
-s = W f(v)
+docs/GATE0_PREREG.md
+docs/GATE0_PREFLIGHT.md
+docs/GATE0_RESULT.md
+experiments/gate0_dual_geometry.py
+```
+
+Result: a metric route can expose a distinction deliberately collapsed by a frozen wired route, and geometry/rewiring can be manipulated independently. But a matched generic extra matrix solves the toy perfectly too.
+
+```text
+DUAL_ROUTE_INSTRUMENT       PASS
+SPECIAL_METRIC_ADVANTAGE    NOT ESTABLISHED
+```
+
+Gate 0 is plumbing.
+
+## Gate 1 — shared metric history
+
+Files:
+
+```text
+docs/GATE1_PREFLIGHT.md
+docs/GATE1_FROZEN_PROTOCOL.md
+docs/GATE1_RESULT.md
+experiments/gate1_shared_milieu.py
+tests/test_gate1_shared_milieu.py
+```
+
+Task:
+
+```text
+cue at i
+wait
+probe at distinct j
+label = same latent context?
+```
+
+Receiver sees only slow state at `j`.
+
+Five frozen holdout seeds:
+
+```text
+condition                         aligned     scrambled
+no slow state                     .5028        .5027
+private same clearance            .5028        .5027
+shared metric diffusion           .9123        .5082
+shared no diffusion               .5028        .5027
+private matched spectrum          .5028        .5027
+random shared matched spectrum    .5186        .5093
+metric geometry shuffle           .4838        .4861
+```
+
+Supported narrow statement:
+
+> **History can have an address vocabulary. A slow metric state makes past activity locally available when useful temporal context is aligned with that metric vocabulary; destroy the alignment and the advantage vanishes.**
+
+No biological or unique-capability claim follows.
+
+## Gate 1b — addressed attacker
+
+Files:
+
+```text
+experiments/gate1b_addressed_attacker.py
+docs/GATE1B_ADDRESSED_ATTACKER.md
+tests/test_gate1b_addressed_attacker.py
+```
+
+The attacker ignores physical positions. It learns a symmetric rank-8 addressed relation from the same training cue/probe labels and uses
+
+```text
+T_addressed = U U^T
+```
+
+as the cue-to-local-receiver transition.
+
+Five holdout seeds:
+
+```text
+seed      aligned      scrambled
+18101      1.0000        1.0000
+18102      1.0000        1.0000
+18103      1.0000        1.0000
+18104      1.0000        1.0000
+18105      1.0000        1.0000
+
+mean       1.0000        1.0000
+```
+
+Verdict:
+
+```text
+UNIQUE_METRIC_CAPABILITY       FAIL
+ADDRESSED_LEARNED_ATTACKER     PASS
+RESOURCE ADVANTAGE             UNDECIDED
+```
+
+Do not headline the current float payload. The rank-8 factor is 384 floats / 1536 B at float32, but it is likely highly compressible; the metric side must also honestly charge whatever geometry/schema is not physically free.
+
+The live question is now:
+
+> **How many persistent structure bits / physical constraints / learned edges must be installed so that a future receiver can cheaply access the relevant history?**
+
+That is the bridge back to `SplatNeuron`'s observer-resource ledger.
+
+## Membrane multiplex correction
+
+New file:
+
+```text
+docs/MEMBRANE_MULTIPLEX_PREFLIGHT.md
+```
+
+Do not model a neuron as one scalar output copied into several media.
+
+The membrane is a distributed boundary with simultaneous consequences:
+
+```text
+intracellular consequence
+    local voltage / compartment state
+
+synaptic consequence
+    addressed transmitter release after suitable axonal events
+
+quasi-static extracellular consequence
+    transmembrane currents contribute immediately to phi
+
+slow chemical / ionic consequence
+    extrasynaptic transmitter, ionic accumulation, buffering, etc.
+```
+
+Important correction:
+
+> **Neurotransmitter release is not how the neuron directly writes the extracellular electric field. Transmembrane currents write the electric field. Neurotransmitters can cause such currents at target membranes and can also participate in distinct chemical volume-transmission channels.**
+
+Likewise, `dendrite = low-pass filter` is too weak. Passive cable properties are low-pass, but active conductances can amplify, compensate, resonate and change filtering.
+
+Use instead:
+
+> **Dendritic morphology plus local membrane state defines a state-dependent spatiotemporal transfer operator.**
+
+A later compartmental model should therefore replace
+
+```text
 q = E f(v)
-phi = G q
-e = R phi
-
-tau_c dc/dt = D_c Laplacian(c) - clearance(c) + B f(v)
-
-tau_v dv/dt = F(v, h, s + lambda_e e, c)
-dh/dt = H(h, v, input)
 ```
 
-Effective instantaneous metric coupling:
+with something closer to
 
 ```text
-A_eph = R G E
+q_i(x,t) = transmembrane_current_i(x,t)
+phi = G[q]
 ```
 
-The structural property is that `A_eph` is induced by emitter geometry, medium geometry and receiver geometry. It is not stored as a free pairwise weight matrix.
+and keep chemical/ionic channels separately stateful.
 
-# Gate 0 — completed
+### New resource hypothesis
 
-Preregistration: `docs/GATE0_PREREG.md`  
-Preflight correction: `docs/GATE0_PREFLIGHT.md`  
-Result: `docs/GATE0_RESULT.md`
+The possible interesting object is **shared physical implementation of multiple transfer kernels**.
 
-The wired matrix was deliberately constructed to collapse a two-source distinction. The metric route could expose it.
-
-Registered local reproduction:
+For one source/receiver pair:
 
 ```text
-seed    synaptic A   metric B   combined C   matched generic D   source-swap E   clamp F
-18001     0.5008       1.0000      1.0000          1.0000            0.0150       0.5122
-18002     0.5018       1.0000      1.0000          1.0000            0.0000       0.4940
-18003     0.4935       1.0000      1.0000          1.0000            0.0000       0.5060
+H_syn[j<-i](omega)
+H_eph[j<-i](omega)
+H_chem[j<-i](omega)
 ```
 
-Route algebra behaved as required:
-
-```text
-move metric source positions  -> A_eph changes, W unchanged
-rewire W                      -> W changes, A_eph unchanged
-```
-
-The source-position counterfactual reused the already-trained C readout; no retraining was allowed.
-
-## Gate 0 verdict
-
-```text
-DUAL_ROUTE_INSTRUMENT              PASS
-SPECIAL_METRIC_ADVANTAGE           NOT ESTABLISHED
-MATCHED_GENERIC_ATTACKER           PERFECT TOO
-```
-
-Supported statement:
-
-> **A metric route can carry a distinction deliberately absent from a frozen wired route, and the two routes can be independently manipulated. This constructed toy does not show a metric/ephaptic advantage over generic additional coupling.**
-
-This is plumbing, not neuroscience.
-
-# Gate 1 — live next experiment
+are not arbitrary independent matrices in biology. They are jointly constrained by common positions, morphologies, membrane currents, release sites and receptor distributions.
 
 Question:
 
-> **Does a slow shared metric state create useful history/coupling that cannot be reproduced by giving each unit matched independent private adaptation?**
+> **Can one physical geometry implement a useful family of channel-specific transfer functions more cheaply than storing each channel as an unrelated generic operator?**
 
-Add only one new object:
+Mandatory attacker: generic multi-channel system with the same total state/output count, matched temporal spectra where meaningful, explicit connection-description cost, and no shared-geometry constraint.
 
-```text
-c_i(t)  slow extracellular/homeostatic state over physical positions
-```
+This is the mathematical object to analyze before inventing another neuron architecture.
 
-Toy dynamics:
+## Grounding / recursive projection
 
-```text
-tau_c dc/dt = D_c Laplacian(c) - k_clear c + b release(v)
-```
-
-Neural units receive `c_i` as a local excitability/gain/threshold perturbation.
-
-## Mandatory conditions
+File:
 
 ```text
-A  no slow adaptation
-B  independent private adaptation per unit
-C  shared slow metric milieu
-D  C with diffusion removed (local extracellular reservoirs only)
-E  C with geometry shuffled at test time / intervention
-F  private adaptation with matched total state dimension and decay constants
+docs/GROUNDING_AND_RECURSION.md
 ```
 
-The key attacker is B/F, not “no field.”
+The model-collapse connection is deliberately separate from Gate 1 and from the membrane multiplex result.
 
-If private adaptation matches C, then the slow field is just an expensive implementation of ordinary fatigue/homeostasis in this toy.
-
-What would be interesting is specifically **non-addressed shared history**:
+Do not say:
 
 ```text
-unit i fires
-   -> local shared c changes
-   -> nearby unwired j changes future excitability
-   -> effect decays/diffuses with metric distance
+real world = high frequency
+ephaptic field = reality channel
+internal thought = model collapse
 ```
 
-and a task where that shared history is useful under matched state/parameter count.
-
-## Gate 1 design warning
-
-Do not hand the task a label that is literally “which cells are physically near.” That would make the metric field win by construction.
-
-Use at least two structure regimes:
+The useful distinction is:
 
 ```text
-aligned world   task-relevant events have physical locality
-scrambled world same latent task after permutation/dense remapping
+external innovation
+    information entering from a source not generated by the current internal model
+
+recursive projection
+    repeated observation/training/reaction to consequences generated by the current model
 ```
 
-Prediction to register before result:
+The candidate principle is:
+
+> **A loop cannot restore a distinction its current path no longer carries unless new input contains information about that distinction that is not already a consequence of the current loop state.**
+
+Importantly, independently informative synthetic input should be able to rescue a missing distinction too. If so, the variable is **innovation provenance**, not `reality versus imagination`.
+
+The Gate-1 field itself gives a precise filtering analogy. In the metric-Laplacian eigenbasis:
 
 ```text
-shared metric state may help only in aligned world;
-private adaptation should be competitive or superior after scrambling.
+c_k(t) = exp[-(clearance + diffusion * lambda_k)t] c_k(0)
 ```
 
-If so, the result is conditional inductive bias again, not a universal field advantage.
+Large-`lambda` spatial modes decay faster. The same mechanism that cheaply spreads broad aligned context also erases rapidly varying metric distinctions.
 
-# Gate 2 — morphology later
+Do not spend a gate merely demonstrating that theorem. A worthwhile experiment must make the external-innovation source matter in a nontrivial way.
 
-Only after point-unit Gate 1.
+## Personal neurological observations — scientific caution
 
-Replace scalar `E_i` and `R_i` with spatial emitter/receiver shapes:
+Do not use the user's post-surgical jolts as evidence for a specific amygdala route, seizure mechanism, or rewiring mechanism. They are a motivating example of the general systems point that threat/body/sensory channels can converge on shared defensive circuitry, but the personal mechanism is medically unresolved.
+
+## Next science
+
+Three continuations are now visible. Do not mix them all into one gate.
+
+### A. Resource frontier — still probably first
+
+Attack Gate 1b's apparent cost:
 
 ```text
-A_eph[j,i] = R_j G E_i
+metric geometry / diffusion
+vs
+learned addressed low-rank factor
+vs
+compressed context assignment / interval code
+vs
+generic sparse graph / low-rank recurrent controls
 ```
 
-Reconnect to the detailed geometric-neuron line only here.
-
-The claim to test is not “detailed neurons compute functions point neurons cannot.” Point-network emulators remain mandatory attackers. The interesting currency is whether morphology gives a **short physical implementation/description** of receiver-specific spatiotemporal transformations that generic point machinery reproduces only with more nodes, weights, depth, communication or synchronization.
-
-# Temporal / memory bridge
-
-Keep these layers separate:
+At common held-out task error charge:
 
 ```text
-quasi-static phi_t       instantaneous shared metric coupling
-slow extracellular c_t  shared local environmental state
-neuron/synapse h_t       private/addressed memory and plasticity
-recurrent loops          system-level temporal persistence
+persistent operator/structure description
+state dimension
+per-event communication
+update compute
+learning/search cost
 ```
 
-A memory or momentary time window does not have to be stored in `phi`.
+Prediction: in the aligned world the metric/interval vocabulary may have a very short description; in the scrambled world the addressed learner should dominate flexibility. If a simple compressed context code beats both, keep that result.
 
-A memory-bearing loop can instead be distributed across stateful neurons/synapses/slow milieu while the quasi-static field continually redraws the instantaneous metric coupling produced by the current sources.
+### B. Multiplex transfer mathematics
 
-This is the useful formulation of:
-
-> **the individual phi_t has no memory; the closed loop does.**
-
-# Context reinstatement / identity bridge
-
-Do not turn the personal “loop” intuition into a literal field-memory claim.
-
-The scientifically usable abstraction is:
+Analyze the channel family
 
 ```text
-current context
-   -> reinstates a distributed old state/trajectory
-   -> reinstated state changes what is likely next
-   -> repeated re-entry changes accessibility/plasticity over longer times
+H_ji(omega) = {H_syn, H_eph, H_chem}
 ```
 
-The environment can therefore be a route back into an old neural state without being a direct knob over memory strength.
+when the components share latent physical parameters versus when they are stored independently.
 
-At the architecture level this suggests that **identity/self-state is not one fixed point**. It can be a slowly changing distribution of recurrently accessible states, anchored by persistent structure but continually rewritten by experience and plasticity.
+The question is description/implementation coupling, not capability.
 
-That concept belongs in later memory/context experiments, not Gate 1.
+### C. Innovation provenance
 
-# Evolution / value
-
-Do not put “seek reward / flee pain” into Gate 1 as a generic RL loss. That would make the repo ordinary RL with unusual coupling before the coupling has earned itself.
-
-If value enters later, the cleaner architectural route is a **third diffuse modulatory channel** changing gain/plasticity/threshold over metric neighborhoods. Compare it against explicit global reward/gain controls.
-
-# Old Units repo lesson
-
-The old `SmoothField` update
+Use known field eigenmodes and compare:
 
 ```text
-F <- (1-r) F + r new
+closed decay
+self-generated reinjection
+fresh external samples
+mixtures with p fresh samples
+independently informative synthetic samples
+fresh samples passed through the same lossy observer
 ```
 
-was not a faithful model of quasi-static extracellular electric potential because it endowed that variable with autonomous temporal state.
+Measure mode retention, held-out recovery, tail/rare-factor recovery and diversity.
 
-But the equation form is useful as a toy relaxation law for a slow shared extracellular variable. Do not label it potassium without explicit release, diffusion, buffering/clearance and physiological scaling.
+The strong question is not whether `real data` is magic. It is whether information missing from the current internal representation must enter through an independently informative route.
 
-Also retain the old rule: naming roles `sensory`, `memory`, `integration`, etc. does not make them emerge.
+## Morphology later
 
-# Stop lines
+Only after point-unit state/coupling/resource questions survive.
 
-- no “second electromagnetic brain” claim;
-- no field-memory claim for quasi-static electric potential;
-- no “slaving/conductor” claim from observational Granger directionality;
-- no autonomous wave equation for the ephaptic electric field unless explicitly modelling another physical regime;
-- no special metric-compute claim from Gate 0 — generic coupling matched it;
-- no slow-field claim without matched private adaptation;
-- no reward story before coupling/state earns itself;
-- no growth/pruning story before fixed-capacity controls;
-- no claim that spatial structure supplies semantics;
-- no claim that the old `SmoothField` was secretly a potassium model; at most it had the right *qualitative form* for a relaxing shared variable.
+Then replace scalar emit/read gains with distributed membrane shapes/current sources and ask whether morphology is a short physical implementation of useful receiver-specific transfer kernels relative to generic point machinery.
 
-# Current files
+## Oja note
+
+Do **not** pivot this repo into `Oja rule in geometric coordinates` now. Oja/PCA remains a useful historical baseline and possible later local-learning mechanism. The live object here is coupling/state/resource geometry.
+
+## Medical note
+
+Pregabalin is an antiepileptic prescription drug and official EMA information recommends gradual discontinuation rather than abrupt stopping. Any new or changed post-surgical jolt-like episodes after medication changes belong with the treating neurologist rather than being used as mechanistic evidence for this repo.
+
+## Stop lines
+
+- no second electromagnetic brain;
+- no field memory claim for quasi-static `phi`;
+- no unique metric capability claim after Gate 1b;
+- no potassium claim from normalized `c`;
+- no claim that transmitter itself is the electric field;
+- no claim that all neurons use the same mix of synaptic/electric/volume channels;
+- no claim that dendrites are merely passive low-pass filters;
+- no reward/evolution story before the coupling/resource result earns it;
+- no model-collapse-is-thought claim;
+- no `real = high frequency` claim;
+- no `synthetic = intrinsically inferior` claim;
+- no morphology efficiency story until matched generic multi-channel attackers are settled.
+
+## Branch / PR
+
+Active branch:
 
 ```text
-README.md
-HANDOFF_CURRENT.md
-splatneuronplusfield/core.py
-experiments/gate0_dual_geometry.py
-docs/GATE0_PREFLIGHT.md
-docs/GATE0_PREREG.md
-docs/GATE0_RESULT.md
-tests/test_core.py
-tests/test_gate0_harness.py
-.github/workflows/ci.yml
+agent/shared-milieu-grounding
 ```
 
-Next builder: design and preregister Gate 1 before adding biological detail.
+Draft PR:
+
+```text
+#1 Gate 1: shared metric history, addressed attacker, and grounding hypothesis
+```
+
+CI now passes on Python 3.10 and 3.13 after package-discovery and `python -m pytest` fixes. Treat CI only as mechanical verification, never as scientific evidence.
