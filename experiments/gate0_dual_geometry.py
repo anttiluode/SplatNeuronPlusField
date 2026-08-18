@@ -62,6 +62,8 @@ def make_system(n: int, rng: np.random.Generator) -> tuple[DualGeometry, int, in
     w[:, left] = shared_column
     w[:, right] = shared_column
 
+    # Gate 0 uses scalar emit/read gains only. Do not call these morphology or
+    # orientation; that belongs to a later gate.
     emitter = 0.8 + 0.4 * rng.random(n)
     receiver = 0.8 + 0.4 * rng.random(n)
 
@@ -158,34 +160,29 @@ def run(seed: int, train_samples: int, test_samples: int, noise: float) -> dict:
     # Post-training interventions on the C readout. No retraining is allowed.
     readout_c = fitted["C_synaptic_plus_metric"]
 
-    position_permutation = rng.permutation(n)
-    position_system = system.with_positions(system.positions[position_permutation])
-    pos_features = features_from_matrix(position_system.w_syn + position_system.a_eph, test.activity)
-
-    emitter_perm = rng.permutation(n)
-    receiver_perm = rng.permutation(n)
-    orientation_system = DualGeometry(
-        w_syn=w.copy(),
-        positions=system.positions.copy(),
-        emitter_gain=system.emitter_gain[emitter_perm],
-        receiver_gain=system.receiver_gain[receiver_perm],
-        electric_length_scale=system.electric_length_scale,
-    )
-    orientation_features = features_from_matrix(
-        orientation_system.w_syn + orientation_system.a_eph,
+    # Deterministic counterfactual: keep neuron/source identities and W fixed,
+    # but exchange the physical positions of the two task-relevant sources.
+    # The metric signatures should swap while the wired route remains exactly
+    # the same.
+    swapped_positions = system.positions.copy()
+    swapped_positions[[left, right]] = swapped_positions[[right, left]]
+    swapped_system = system.with_positions(swapped_positions)
+    swapped_features = features_from_matrix(
+        swapped_system.w_syn + swapped_system.a_eph,
         test.activity,
     )
+
     clamped_features = features_from_matrix(w, test.activity)
 
     results["interventions"] = {
-        "E_position_shuffle_test_only": accuracy(readout_c, pos_features, test.labels),
-        "F_emit_receive_pairing_shuffle_test_only": accuracy(readout_c, orientation_features, test.labels),
-        "G_ephaptic_clamp_test_only": accuracy(readout_c, clamped_features, test.labels),
+        "E_swap_task_source_positions_test_only": accuracy(
+            readout_c, swapped_features, test.labels
+        ),
+        "F_ephaptic_clamp_test_only": accuracy(readout_c, clamped_features, test.labels),
     }
 
     # Orthogonal route checks. Moving geometry must not alter W; changing W
-    # must not alter A_eph. Use a genuine column permutation here rather than
-    # swapping the two deliberately identical source columns.
+    # must not alter A_eph.
     rewire_permutation = rng.permutation(n)
     rewired_w = w[:, rewire_permutation]
     rewired_system = system.with_w_syn(rewired_w)
@@ -193,8 +190,8 @@ def run(seed: int, train_samples: int, test_samples: int, noise: float) -> dict:
     singular_a = np.linalg.svd(a, compute_uv=False)
     singular_generic = np.linalg.svd(generic, compute_uv=False)
     results["route_independence"] = {
-        "geometry_change_relative_W": frob_relative(w, position_system.w_syn),
-        "geometry_change_relative_Aeph": frob_relative(a, position_system.a_eph),
+        "geometry_change_relative_W": frob_relative(w, swapped_system.w_syn),
+        "geometry_change_relative_Aeph": frob_relative(a, swapped_system.a_eph),
         "rewire_change_relative_W": frob_relative(w, rewired_system.w_syn),
         "rewire_change_relative_Aeph": frob_relative(a, rewired_system.a_eph),
         "matched_generic_frobenius_ratio": float(np.linalg.norm(generic) / np.linalg.norm(a)),
@@ -206,8 +203,12 @@ def run(seed: int, train_samples: int, test_samples: int, noise: float) -> dict:
     c_acc = results["conditions"]["C_synaptic_plus_metric"]
     a_acc = results["conditions"]["A_synaptic_only"]
     generic_acc = results["conditions"]["D_synaptic_plus_matched_generic"]
+    swap_acc = results["interventions"]["E_swap_task_source_positions_test_only"]
+    clamp_acc = results["interventions"]["F_ephaptic_clamp_test_only"]
     results["interpretation"] = {
         "metric_route_exposes_frozen_W_null": bool(c_acc > a_acc + 0.20),
+        "source_position_swap_breaks_learned_readout": bool(swap_acc < c_acc - 0.20),
+        "field_clamp_breaks_learned_readout": bool(clamp_acc < c_acc - 0.20),
         "generic_attacker_matches_within_5pp": bool(generic_acc >= c_acc - 0.05),
         "special_field_advantage_established": False,
     }
