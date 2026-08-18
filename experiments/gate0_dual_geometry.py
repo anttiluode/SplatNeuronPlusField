@@ -1,6 +1,6 @@
 """Gate 0: can a metric route carry a distinction a frozen wired route cannot?
 
-This is intentionally a *structural* synthetic test.  The synaptic matrix is
+This is intentionally a *structural* synthetic test. The synaptic matrix is
 constructed to collapse two source addresses onto the same wired consequence.
 The metric route is not expected to beat an arbitrary dense matrix; that
 attacker is included precisely to prevent that overclaim.
@@ -41,7 +41,6 @@ def orthogonal(rng: np.random.Generator, n: int) -> np.ndarray:
 
 def matched_generic(a: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     """Randomize singular vectors while preserving singular values exactly."""
-
     _, singular, _ = np.linalg.svd(a, full_matrices=True)
     u = orthogonal(rng, a.shape[0])
     v = orthogonal(rng, a.shape[1])
@@ -56,26 +55,27 @@ def make_system(n: int, rng: np.random.Generator) -> tuple[DualGeometry, int, in
     right = 3 * n // 4
 
     # Deliberately insufficient wired route: left and right source columns are
-    # identical.  A downstream observer of W @ x cannot infer which source
-    # produced a unit-amplitude event.
+    # identical. A downstream observer of W @ x cannot infer which source
+    # produced a unit-amplitude event from that route alone.
     w = rng.normal(scale=0.025, size=(n, n))
     shared_column = rng.normal(scale=0.25, size=n)
     w[:, left] = shared_column
     w[:, right] = shared_column
 
-    # Mild orientation/gain heterogeneity.  Position remains the dominant
-    # metric address in Gate 0; morphology comes later.
     emitter = 0.8 + 0.4 * rng.random(n)
     receiver = 0.8 + 0.4 * rng.random(n)
 
-    system = DualGeometry(
-        w_syn=w,
-        positions=positions,
-        emitter_gain=emitter,
-        receiver_gain=receiver,
-        electric_length_scale=0.22,
+    return (
+        DualGeometry(
+            w_syn=w,
+            positions=positions,
+            emitter_gain=emitter,
+            receiver_gain=receiver,
+            electric_length_scale=0.22,
+        ),
+        left,
+        right,
     )
-    return system, left, right
 
 
 def make_dataset(
@@ -89,14 +89,11 @@ def make_dataset(
     labels = rng.integers(0, 2, size=samples)
     x = rng.normal(scale=noise, size=(samples, n))
     for row, label in enumerate(labels):
-        source = right if label else left
-        x[row, source] += 1.0
+        x[row, right if label else left] += 1.0
     return Dataset(activity=x, labels=labels)
 
 
 def features_from_matrix(matrix: np.ndarray, x: np.ndarray) -> np.ndarray:
-    # Mild nonlinearity prevents the experiment from being a pure matrix
-    # identity test while retaining transparent control.
     return np.tanh(x @ matrix.T)
 
 
@@ -158,14 +155,12 @@ def run(seed: int, train_samples: int, test_samples: int, noise: float) -> dict:
         fitted[name] = readout
         results["conditions"][name] = accuracy(readout, f_test, test.labels)
 
-    # Post-training interventions on condition C.
+    # Post-training interventions on the C readout. No retraining is allowed.
     readout_c = fitted["C_synaptic_plus_metric"]
 
-    permutation = rng.permutation(n)
-    shuffled_positions = system.positions[permutation]
-    position_system = system.with_positions(shuffled_positions)
-    position_matrix = position_system.w_syn + position_system.a_eph
-    pos_features = features_from_matrix(position_matrix, test.activity)
+    position_permutation = rng.permutation(n)
+    position_system = system.with_positions(system.positions[position_permutation])
+    pos_features = features_from_matrix(position_system.w_syn + position_system.a_eph, test.activity)
 
     emitter_perm = rng.permutation(n)
     receiver_perm = rng.permutation(n)
@@ -176,25 +171,27 @@ def run(seed: int, train_samples: int, test_samples: int, noise: float) -> dict:
         receiver_gain=system.receiver_gain[receiver_perm],
         electric_length_scale=system.electric_length_scale,
     )
-    orientation_matrix = orientation_system.w_syn + orientation_system.a_eph
-    orientation_features = features_from_matrix(orientation_matrix, test.activity)
-
+    orientation_features = features_from_matrix(
+        orientation_system.w_syn + orientation_system.a_eph,
+        test.activity,
+    )
     clamped_features = features_from_matrix(w, test.activity)
 
     results["interventions"] = {
         "E_position_shuffle_test_only": accuracy(readout_c, pos_features, test.labels),
-        "F_emit_receive_pairing_shuffle_test_only": accuracy(
-            readout_c, orientation_features, test.labels
-        ),
+        "F_emit_receive_pairing_shuffle_test_only": accuracy(readout_c, orientation_features, test.labels),
         "G_ephaptic_clamp_test_only": accuracy(readout_c, clamped_features, test.labels),
     }
 
-    # Orthogonal route sanity checks.  Moving geometry must not alter W;
-    # rewiring W must not alter A_eph.
-    rewired_w = w.copy()
-    rewired_w[:, [left, right]] = rewired_w[:, [right, left]]
+    # Orthogonal route checks. Moving geometry must not alter W; changing W
+    # must not alter A_eph. Use a genuine column permutation here rather than
+    # swapping the two deliberately identical source columns.
+    rewire_permutation = rng.permutation(n)
+    rewired_w = w[:, rewire_permutation]
     rewired_system = system.with_w_syn(rewired_w)
 
+    singular_a = np.linalg.svd(a, compute_uv=False)
+    singular_generic = np.linalg.svd(generic, compute_uv=False)
     results["route_independence"] = {
         "geometry_change_relative_W": frob_relative(w, position_system.w_syn),
         "geometry_change_relative_Aeph": frob_relative(a, position_system.a_eph),
@@ -202,11 +199,10 @@ def run(seed: int, train_samples: int, test_samples: int, noise: float) -> dict:
         "rewire_change_relative_Aeph": frob_relative(a, rewired_system.a_eph),
         "matched_generic_frobenius_ratio": float(np.linalg.norm(generic) / np.linalg.norm(a)),
         "matched_generic_singular_value_max_abs_error": float(
-            np.max(np.abs(np.linalg.svd(generic, compute_uv=False) - np.linalg.svd(a, compute_uv=False)))
+            np.max(np.abs(singular_generic - singular_a))
         ),
     }
 
-    # These are interpretation aids, not CI assertions.
     c_acc = results["conditions"]["C_synaptic_plus_metric"]
     a_acc = results["conditions"]["A_synaptic_only"]
     generic_acc = results["conditions"]["D_synaptic_plus_matched_generic"]
