@@ -5,6 +5,7 @@ def test_gate0_constructed_null_and_route_independence():
     result = run(seed=18001, train_samples=1200, test_samples=1200, noise=0.05)
 
     conditions = result["conditions"]
+    interventions = result["interventions"]
     routes = result["route_independence"]
 
     # Harness check, not a biological result: by construction the two source
@@ -14,6 +15,18 @@ def test_gate0_constructed_null_and_route_independence():
     # The metric path should expose the address distinction in this constructed
     # toy. If this fails, Gate 0 is measuring a bug rather than dual routes.
     assert conditions["C_synaptic_plus_metric"] > conditions["A_synaptic_only"] + 0.20
+
+    # These are test-time counterfactuals using the already-trained C readout.
+    # Exchanging metric addresses or removing the metric route should break the
+    # consequence that the readout learned to use.
+    assert (
+        interventions["E_swap_task_source_positions_test_only"]
+        < conditions["C_synaptic_plus_metric"] - 0.20
+    )
+    assert (
+        interventions["F_ephaptic_clamp_test_only"]
+        < conditions["C_synaptic_plus_metric"] - 0.20
+    )
 
     assert routes["geometry_change_relative_W"] < 1e-12
     assert routes["geometry_change_relative_Aeph"] > 1e-3
